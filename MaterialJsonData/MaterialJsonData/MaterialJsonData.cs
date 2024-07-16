@@ -33,34 +33,46 @@ namespace MaterialJsonData
                 var myClient = storageAccount.CreateCloudBlobClient();
                 var container = myClient.GetContainerReference(containerName);
                 var list = container.ListBlobs().OfType<CloudBlobDirectory>().ToList();
-                var blobListDirectory = list[0].ListBlobs().OfType<CloudBlobDirectory>().ToList();            
-                foreach (var blobDirectory in blobListDirectory)
+                if (list != null && list.Count > 0)
                 {
-                    if (blobDirectory.Prefix == blobDirectoryPrefix)
-                    {                     
-                        foreach (var blobFile in blobDirectory.ListBlobs().OfType<CloudBlockBlob>())
-                        {                         
-                            BlobEntity blobDetails = new BlobEntity();
-                            string[] blobName = blobFile.Name.Split(new char[] { '/' });
-                            string[] filename = blobName[2].Split(new char[] { '.' });
-                            string[] fileDateTime = filename[0].Split(new char[] { '_' });
-                            string fileCreatedDateTime = fileDateTime[1] + fileDateTime[2];
-                            string formatString = "yyyyMMddHHmmss";
-                            CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobFile.Name);
-                            blobDetails.Blob = blockBlob;
-                            blobDetails.FileName = blobName[2];
-                            blobDetails.FileCreatedDate = DateTime.ParseExact(fileCreatedDateTime, formatString, null);
-                            blobDetails.FileData = blockBlob.DownloadTextAsync().Result;
-                            blobDetails.BlobName = blobFile.Name;
-                            blobList.Add(blobDetails);
-                            
+                    var blobListDirectory = list[0].ListBlobs().OfType<CloudBlobDirectory>().ToList();
+                    foreach (var blobDirectory in blobListDirectory)
+                    {
+                        if (blobDirectory.Prefix == blobDirectoryPrefix)
+                        {
+                            foreach (var blobFile in blobDirectory.ListBlobs().OfType<CloudBlockBlob>())
+                            {
+                                BlobEntity blobDetails = new BlobEntity();
+                                string[] blobName = blobFile.Name.Split(new char[] { '/' });
+                                string[] filename = blobName[2].Split(new char[] { '.' });
+                                string[] fileDateTime = filename[0].Split(new char[] { '_' });
+                                string fileCreatedDateTime = fileDateTime[1] + fileDateTime[2];
+                                string formatString = "yyyyMMddHHmmss";
+                                CloudBlockBlob blockBlob = container.GetBlockBlobReference(blobFile.Name);
+                                blobDetails.Blob = blockBlob;
+                                blobDetails.FileName = blobName[2];
+                                blobDetails.FileCreatedDate = DateTime.ParseExact(fileCreatedDateTime, formatString, null);
+                                blobDetails.FileData = blockBlob.DownloadTextAsync().Result;
+                                blobDetails.BlobName = blobFile.Name;
+                                blobList.Add(blobDetails);
+                            }
+                            blobList.OrderByDescending(x => x.FileCreatedDate.Date).ThenByDescending(x => x.FileCreatedDate.TimeOfDay).ToList();
                         }
-                        blobList.OrderByDescending(x => x.FileCreatedDate.Date).ThenByDescending(x => x.FileCreatedDate.TimeOfDay).ToList();
+                    }
+
+                    foreach (var blobDetails in blobList)
+                    {
+                        CheckRequiredFields(blobDetails, container);
                     }
                 }
-                foreach (var blobDetails in blobList)
+                else
                 {
-                    CheckRequiredFields(blobDetails, container);
+                    var errorLog = new ErrorLogEntity();
+                    errorLog.PipeLineName = "Material";
+                    errorLog.ErrorMessage = "No source folder present in the container";
+                  //  SaveErrorLogData(errorLog);
+                    Logger logger = new Logger(_configuration);
+                    logger.ErrorLogData(null, errorLog.ErrorMessage);
                 }
             }
             catch (StorageException ex)
@@ -68,7 +80,16 @@ namespace MaterialJsonData
                 var errorLog = new ErrorLogEntity();
                 errorLog.PipeLineName = "Material";
                 errorLog.ErrorMessage = ex.Message;
-                SaveErrorLogData(errorLog);
+              //  SaveErrorLogData(errorLog);
+                Logger logger = new Logger(_configuration);
+                logger.ErrorLogData(ex, ex.Message);
+            }
+            catch (Exception ex)
+            {
+                var errorLog = new ErrorLogEntity();
+                errorLog.PipeLineName = "Material";
+                errorLog.ErrorMessage = ex.Message;
+              //  SaveErrorLogData(errorLog);
                 Logger logger = new Logger(_configuration);
                 logger.ErrorLogData(ex, ex.Message);
             }
@@ -85,7 +106,7 @@ namespace MaterialJsonData
                     errorLog.PipeLineName = "Material";
                     errorLog.FileName = blobDetails.FileName;
                     errorLog.ErrorMessage = "File is empty";
-                    SaveErrorLogData(errorLog);
+                  //  SaveErrorLogData(errorLog);
                     Logger logger = new Logger(_configuration);
                     logger.ErrorLogData(null, "File is empty");
                 }
@@ -109,13 +130,12 @@ namespace MaterialJsonData
                         errorLog.PipeLineName = "Material";
                         errorLog.FileName = blobDetails.FileName;
                         errorLog.ErrorMessage = errors[0];
-                        SaveErrorLogData(errorLog);
+                       // SaveErrorLogData(errorLog);
                         Logger logger = new Logger(_configuration);
                         logger.ErrorLogData(null, errors[0]);
                     }
                     else
-                    {
-                        int countMaterial = 0;
+                    {                       
                         foreach (var payload in materialdataList.payload)
                         {
                             if (payload.productid == null)
@@ -131,8 +151,7 @@ namespace MaterialJsonData
                                 returnData.Add("ProductGroup is null", 0);
                             }
                             else
-                            {
-                                countMaterial++;
+                            {                             
                                 var materialDBEntity = new MaterialDBEntity();
                                 materialDBEntity.MaterialNumber = payload.productid;
                                 materialDBEntity.PartsPerPack = payload.partsperpack;
@@ -160,7 +179,7 @@ namespace MaterialJsonData
                                 materialDBEntity.BaseUOM = payload.packuom;
                                 materialDBEntity.PlantID = payload.plant;                             
                                 var return_Customer = SaveMaterialData(materialDBEntity);
-                                returnData.Add("Material" + countMaterial, return_Customer);
+                                returnData.Add("Material" + payload.productid, return_Customer);
 
                             }
                         }
@@ -174,7 +193,7 @@ namespace MaterialJsonData
                             errorLog2.PipeLineName = "Material";
                             errorLog2.FileName = blobDetails.FileName;
                             errorLog2.ParentNodeName = returnvalue.Key;
-                            SaveErrorLogData(errorLog2);
+                           // SaveErrorLogData(errorLog2);
                             break;
                         }
                         else
@@ -192,67 +211,69 @@ namespace MaterialJsonData
                 errorLog.PipeLineName = "Material";
                 errorLog.ParentNodeName = "CheckRequiredFields";
                 errorLog.ErrorMessage = ex.Message;
-                SaveErrorLogData(errorLog);
+              //  SaveErrorLogData(errorLog);
                 Logger logger = new Logger(_configuration);
                 logger.ErrorLogData(ex, ex.Message);
             }
         }
         private int SaveMaterialData(MaterialDBEntity materialdata)
         {
-            try
+            using (SqlConnection con = new SqlConnection(_configuration["DatabaseConnectionString"]))
             {
-                SqlConnection con = new SqlConnection(_configuration["DatabaseConnectionString"]);
-                SqlCommand cmd = new SqlCommand("Material_save", con);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@MaterialNumber", materialdata.MaterialNumber);
-                cmd.Parameters.AddWithValue("@PartsPerPack", materialdata.PartsPerPack);
-                cmd.Parameters.AddWithValue("@MaterialType", materialdata.MaterialType);
-                cmd.Parameters.AddWithValue("@MaterialGroup", materialdata.MaterialGroup);
-                cmd.Parameters.AddWithValue("@BrandId", materialdata.BrandId);               
-                cmd.Parameters.AddWithValue("@BeverageMaterial", materialdata.BeverageMaterial);
-                cmd.Parameters.AddWithValue("@PackTypeId", materialdata.PackTypeId);
-                cmd.Parameters.AddWithValue("@FlavourId", materialdata.FlavourId);
-                cmd.Parameters.AddWithValue("@MaterialCategory", materialdata.MaterialCategory);
-                cmd.Parameters.AddWithValue("@ConsumerSku", materialdata.ConsumerSku);
-                cmd.Parameters.AddWithValue("@MaterialPriceGroup", materialdata.MaterialPriceGroup);
-                cmd.Parameters.AddWithValue("@TaxClassMaterial", materialdata.TaxClassMaterial);
-                cmd.Parameters.AddWithValue("@SalesOrg", materialdata.SalesOrg);
-                cmd.Parameters.AddWithValue("@DistributionChannel", materialdata.DistributionChannel);
-                cmd.Parameters.AddWithValue("@IsActive", materialdata.IsActive);
-                cmd.Parameters.AddWithValue("@PackSize", materialdata.PackSize);
-                cmd.Parameters.AddWithValue("@convFactorNum", materialdata.convFactorNum);
-                cmd.Parameters.AddWithValue("@convFactorDen", materialdata.convFactorDen);
-                cmd.Parameters.AddWithValue("@ServingSize", materialdata.ServingSize);
-                cmd.Parameters.AddWithValue("@ExternalMaterialGroup", materialdata.ExternalMaterialGroup);
-                cmd.Parameters.AddWithValue("@MaterialHierarchyCode", materialdata.MaterialHierarchyCode);
-                cmd.Parameters.AddWithValue("@PackType", materialdata.PackType);
-                cmd.Parameters.AddWithValue("@FlavourCode", materialdata.FlavourCode);
-                cmd.Parameters.AddWithValue("@BaseUOM", materialdata.BaseUOM);
-                cmd.Parameters.AddWithValue("@PlantID ", materialdata.PlantID);              
-                cmd.Parameters.Add("@returnObj", System.Data.SqlDbType.BigInt).Direction = System.Data.ParameterDirection.Output;
-                con.Open();
-                int retval = cmd.ExecuteNonQuery();
-                con.Close();
-                if (retval != 0)
-                {
-                    return retval;
+                try
+                {                  
+                    SqlCommand cmd = new SqlCommand("Material_save", con);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@MaterialNumber", materialdata.MaterialNumber);
+                    cmd.Parameters.AddWithValue("@PartsPerPack", materialdata.PartsPerPack);
+                    cmd.Parameters.AddWithValue("@MaterialType", materialdata.MaterialType);
+                    cmd.Parameters.AddWithValue("@MaterialGroup", materialdata.MaterialGroup);
+                    cmd.Parameters.AddWithValue("@BrandId", materialdata.BrandId);
+                    cmd.Parameters.AddWithValue("@BeverageMaterial", materialdata.BeverageMaterial);
+                    cmd.Parameters.AddWithValue("@PackTypeId", materialdata.PackTypeId);
+                    cmd.Parameters.AddWithValue("@FlavourId", materialdata.FlavourId);
+                    cmd.Parameters.AddWithValue("@MaterialCategory", materialdata.MaterialCategory);
+                    cmd.Parameters.AddWithValue("@ConsumerSku", materialdata.ConsumerSku);
+                    cmd.Parameters.AddWithValue("@MaterialPriceGroup", materialdata.MaterialPriceGroup);
+                    cmd.Parameters.AddWithValue("@TaxClassMaterial", materialdata.TaxClassMaterial);
+                    cmd.Parameters.AddWithValue("@SalesOrg", materialdata.SalesOrg);
+                    cmd.Parameters.AddWithValue("@DistributionChannel", materialdata.DistributionChannel);
+                    cmd.Parameters.AddWithValue("@IsActive", materialdata.IsActive);
+                    cmd.Parameters.AddWithValue("@PackSize", materialdata.PackSize);
+                    cmd.Parameters.AddWithValue("@convFactorNum", materialdata.convFactorNum);
+                    cmd.Parameters.AddWithValue("@convFactorDen", materialdata.convFactorDen);
+                    cmd.Parameters.AddWithValue("@ServingSize", materialdata.ServingSize);
+                    cmd.Parameters.AddWithValue("@ExternalMaterialGroup", materialdata.ExternalMaterialGroup);
+                    cmd.Parameters.AddWithValue("@MaterialHierarchyCode", materialdata.MaterialHierarchyCode);
+                    cmd.Parameters.AddWithValue("@PackType", materialdata.PackType);
+                    cmd.Parameters.AddWithValue("@FlavourCode", materialdata.FlavourCode);
+                    cmd.Parameters.AddWithValue("@BaseUOM", materialdata.BaseUOM);
+                    cmd.Parameters.AddWithValue("@PlantID ", materialdata.PlantID);
+                    cmd.Parameters.Add("@returnObj", System.Data.SqlDbType.BigInt).Direction = System.Data.ParameterDirection.Output;
+                    con.Open();
+                    int retval = cmd.ExecuteNonQuery();
+                    con.Close();
+                    if (retval != 0)
+                    {
+                        return retval;
+                    }
+                    else
+                    {
+                        return 0;
+                    }
                 }
-                else
+                catch (Exception ex)
                 {
-                    return 0;
+                    var errorLog = new ErrorLogEntity();
+                    errorLog.PipeLineName = "Material";
+                    errorLog.ParentNodeName = "Material Save";
+                    errorLog.ErrorMessage = ex.Message;
+                   // SaveErrorLogData(errorLog);
+                    Logger logger = new Logger(_configuration);
+                    logger.ErrorLogData(ex, ex.Message);
                 }
+                return 0;
             }
-            catch (Exception ex)
-            {
-                var errorLog = new ErrorLogEntity();
-                errorLog.PipeLineName = "Material";
-                errorLog.ParentNodeName = "Material Save";
-                errorLog.ErrorMessage = ex.Message;
-                SaveErrorLogData(errorLog);
-                Logger logger = new Logger(_configuration);
-                logger.ErrorLogData(ex, ex.Message);
-            }
-            return 0;
         }
         public void MoveFile(BlobEntity blob, CloudBlobContainer destContainer, string destDirectory)
         {
@@ -281,29 +302,31 @@ namespace MaterialJsonData
                 errorLog.FileName = blob.FileName;
                 errorLog.ParentNodeName = "Material move";
                 errorLog.ErrorMessage = ex.Message;
-                SaveErrorLogData(errorLog);
+               // SaveErrorLogData(errorLog);
                 Logger logger = new Logger(_configuration);
                 logger.ErrorLogData(ex, ex.Message);
             }
         }
-        private void SaveErrorLogData(ErrorLogEntity errorLogData)
+        public void SaveErrorLogData(ErrorLogEntity errorLogData)
         {
-            try
+            using (SqlConnection con = new SqlConnection(_configuration["DatabaseConnectionString"]))
             {
-                SqlConnection con = new SqlConnection(_configuration["DatabaseConnectionString"]);
-                SqlCommand cmd = new SqlCommand("ErrorLogDetails_save", con);
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.AddWithValue("@PipeLineName", errorLogData.PipeLineName);
-                cmd.Parameters.AddWithValue("@FileName", errorLogData.FileName);
-                cmd.Parameters.AddWithValue("@ParentNodeName", errorLogData.ParentNodeName);
-                cmd.Parameters.AddWithValue("@ErrorMessage", errorLogData.ErrorMessage);
-                con.Open();
-                cmd.ExecuteNonQuery();
-                con.Close();
-            }
-            catch (Exception)
-            {
+                try
+                {
+                    SqlCommand cmd = new SqlCommand("ErrorLogDetails_save", con);
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    cmd.Parameters.AddWithValue("@PipeLineName", errorLogData.PipeLineName);
+                    cmd.Parameters.AddWithValue("@FileName", errorLogData.FileName);
+                    cmd.Parameters.AddWithValue("@ParentNodeName", errorLogData.ParentNodeName);
+                    cmd.Parameters.AddWithValue("@ErrorMessage", errorLogData.ErrorMessage);
+                    con.Open();
+                    cmd.ExecuteNonQuery();
+                    con.Close();
+                }
+                catch (Exception)
+                {
 
+                }
             }
         }
     }
