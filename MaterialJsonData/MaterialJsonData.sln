@@ -3,7 +3,7 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.10.34916.146
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaterialJsonData", "MaterialJsonData\MaterialJsonData.csproj", "{4CC73B88-996E-493F-AA81-817E7BC724EA}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MaterialJsonData", "MaterialJsonData\MaterialJsonData.csproj", "{4B964AAB-A8CE-451E-8F3B-90C670330873}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,15 +11,15 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{4CC73B88-996E-493F-AA81-817E7BC724EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{4CC73B88-996E-493F-AA81-817E7BC724EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{4CC73B88-996E-493F-AA81-817E7BC724EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{4CC73B88-996E-493F-AA81-817E7BC724EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4B964AAB-A8CE-451E-8F3B-90C670330873}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4B964AAB-A8CE-451E-8F3B-90C670330873}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4B964AAB-A8CE-451E-8F3B-90C670330873}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4B964AAB-A8CE-451E-8F3B-90C670330873}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
-		SolutionGuid = {0853C867-B879-4D5D-8BC7-202E92D88B8F}
+		SolutionGuid = {B953216B-7E3F-41F0-B887-92E262445ECB}
 	EndGlobalSection
 EndGlobal

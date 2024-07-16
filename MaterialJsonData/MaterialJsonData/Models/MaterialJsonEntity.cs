@@ -1,4 +1,6 @@
-﻿namespace MaterialJsonData.Models
+﻿using System.Collections.Generic;
+
+namespace MaterialJsonData.Models
 {
     public class MaterialJsonEntity
     {
