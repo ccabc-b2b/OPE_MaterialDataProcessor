@@ -70,7 +70,7 @@ namespace MaterialJsonData
                     var errorLog = new ErrorLogEntity();
                     errorLog.PipeLineName = "Material";
                     errorLog.ErrorMessage = "No source folder present in the container";
-                  //  SaveErrorLogData(errorLog);
+                    //SaveErrorLogData(errorLog);
                     Logger logger = new Logger(_configuration);
                     logger.ErrorLogData(null, errorLog.ErrorMessage);
                 }
@@ -80,7 +80,7 @@ namespace MaterialJsonData
                 var errorLog = new ErrorLogEntity();
                 errorLog.PipeLineName = "Material";
                 errorLog.ErrorMessage = ex.Message;
-              //  SaveErrorLogData(errorLog);
+                //SaveErrorLogData(errorLog);
                 Logger logger = new Logger(_configuration);
                 logger.ErrorLogData(ex, ex.Message);
             }
@@ -89,7 +89,7 @@ namespace MaterialJsonData
                 var errorLog = new ErrorLogEntity();
                 errorLog.PipeLineName = "Material";
                 errorLog.ErrorMessage = ex.Message;
-              //  SaveErrorLogData(errorLog);
+                //SaveErrorLogData(errorLog);
                 Logger logger = new Logger(_configuration);
                 logger.ErrorLogData(ex, ex.Message);
             }
@@ -106,7 +106,7 @@ namespace MaterialJsonData
                     errorLog.PipeLineName = "Material";
                     errorLog.FileName = blobDetails.FileName;
                     errorLog.ErrorMessage = "File is empty";
-                  //  SaveErrorLogData(errorLog);
+                    //SaveErrorLogData(errorLog);
                     Logger logger = new Logger(_configuration);
                     logger.ErrorLogData(null, "File is empty");
                 }
@@ -130,7 +130,7 @@ namespace MaterialJsonData
                         errorLog.PipeLineName = "Material";
                         errorLog.FileName = blobDetails.FileName;
                         errorLog.ErrorMessage = errors[0];
-                       // SaveErrorLogData(errorLog);
+                        //SaveErrorLogData(errorLog);
                         Logger logger = new Logger(_configuration);
                         logger.ErrorLogData(null, errors[0]);
                     }
@@ -193,7 +193,7 @@ namespace MaterialJsonData
                             errorLog2.PipeLineName = "Material";
                             errorLog2.FileName = blobDetails.FileName;
                             errorLog2.ParentNodeName = returnvalue.Key;
-                           // SaveErrorLogData(errorLog2);
+                            //SaveErrorLogData(errorLog2);
                             break;
                         }
                         else
@@ -211,7 +211,7 @@ namespace MaterialJsonData
                 errorLog.PipeLineName = "Material";
                 errorLog.ParentNodeName = "CheckRequiredFields";
                 errorLog.ErrorMessage = ex.Message;
-              //  SaveErrorLogData(errorLog);
+                //SaveErrorLogData(errorLog);
                 Logger logger = new Logger(_configuration);
                 logger.ErrorLogData(ex, ex.Message);
             }
@@ -268,7 +268,7 @@ namespace MaterialJsonData
                     errorLog.PipeLineName = "Material";
                     errorLog.ParentNodeName = "Material Save";
                     errorLog.ErrorMessage = ex.Message;
-                   // SaveErrorLogData(errorLog);
+                   //SaveErrorLogData(errorLog);
                     Logger logger = new Logger(_configuration);
                     logger.ErrorLogData(ex, ex.Message);
                 }
@@ -302,7 +302,7 @@ namespace MaterialJsonData
                 errorLog.FileName = blob.FileName;
                 errorLog.ParentNodeName = "Material move";
                 errorLog.ErrorMessage = ex.Message;
-               // SaveErrorLogData(errorLog);
+                //SaveErrorLogData(errorLog);
                 Logger logger = new Logger(_configuration);
                 logger.ErrorLogData(ex, ex.Message);
             }
